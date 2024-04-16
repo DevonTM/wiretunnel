@@ -33,7 +33,7 @@ func (s *SOCKS5Server) ListenAndServe() error {
 
 	server := socks5.NewServer(
 		socks5.WithAuthMethods([]socks5.Authenticator{authMethod}),
-		socks5.WithDial(s.Dialer.DialContext),
+		socks5.WithDial(dialFilter(s.Dialer.DialContext)),
 		socks5.WithResolver(s),
 	)
 

@@ -21,16 +21,15 @@ type HTTPServer struct {
 	Dialer   *wiredialer.WireDialer
 	Resolver *resolver.Resolver
 
-	dial      func(context.Context, string, string) (net.Conn, error)
+	dial      dialFunc
 	transport *http.Transport
 }
 
 // ListenAndServe listens on the s.Address and serves HTTP requests.
 func (s *HTTPServer) ListenAndServe() error {
+	s.dial = dialFilter(s.Dialer.DialContext)
 	if s.Resolver != nil {
-		s.dial = dialWithLocalDNS(s.Resolver, s.Dialer)
-	} else {
-		s.dial = s.Dialer.DialContext
+		s.dial = dialWithResolver(s.dial, s.Resolver)
 	}
 
 	s.transport = &http.Transport{

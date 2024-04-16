@@ -14,8 +14,10 @@ func NewDialer(path string) (*wiredialer.WireDialer, error) {
 	return wiredialer.NewDialerFromFile(path)
 }
 
-// dialWithLocalDNS returns a dial function that uses a local DNS resolver to resolve the hostname before dialing.
-func dialWithLocalDNS(r *resolver.Resolver, d *wiredialer.WireDialer) func(context.Context, string, string) (net.Conn, error) {
+type dialFunc func(context.Context, string, string) (net.Conn, error)
+
+// dialWithResolver returns a dial function that resolves the address with the given resolver.
+func dialWithResolver(dial dialFunc, r *resolver.Resolver) dialFunc {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
@@ -28,12 +30,27 @@ func dialWithLocalDNS(r *resolver.Resolver, d *wiredialer.WireDialer) func(conte
 		}
 
 		for _, addr := range addrs {
-			conn, err := d.DialContext(ctx, network, net.JoinHostPort(addr, port))
+			conn, err := dial(ctx, network, net.JoinHostPort(addr, port))
 			if err == nil {
 				return conn, nil
 			}
 		}
 
 		return nil, fmt.Errorf("dial: failed to dial %s", address)
+	}
+}
+
+// dialFilter returns a dial function that filters out loopback and unspecified addresses.
+func dialFilter(dial dialFunc) dialFunc {
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, fmt.Errorf("dial: %w", err)
+		}
+		ip := net.ParseIP(host)
+		if ip.IsLoopback() || ip.IsUnspecified() {
+			return nil, fmt.Errorf("dial: invalid address %s", address)
+		}
+		return dial(ctx, network, address)
 	}
 }
