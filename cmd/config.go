@@ -19,7 +19,7 @@ var (
 	socks5User string
 	socks5Pass string
 
-	systemDNS bool
+	localDNS bool
 
 	showVersion bool
 )
@@ -60,9 +60,9 @@ func configParse() error {
 		socks5Pass = env
 	}
 
-	env = os.Getenv("SYSTEM_DNS")
-	if !systemDNS {
-		systemDNS = env == "true"
+	env = os.Getenv("LOCAL_DNS")
+	if !localDNS {
+		localDNS = env == "true"
 	}
 
 	if wgConfigPath == "" {

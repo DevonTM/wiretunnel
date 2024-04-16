@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/DevonTM/wiretunnel/resolver"
+	"github.com/botanica-consulting/wiredialer"
 )
 
 type HTTPServer struct {
@@ -15,19 +18,23 @@ type HTTPServer struct {
 	Username string
 	Password string
 
-	Dial func(context context.Context, network, address string) (net.Conn, error)
+	Dialer   *wiredialer.WireDialer
+	Resolver *resolver.Resolver
 
+	dial      func(context.Context, string, string) (net.Conn, error)
 	transport *http.Transport
 }
 
 // ListenAndServe listens on the s.Address and serves HTTP requests.
 func (s *HTTPServer) ListenAndServe() error {
-	if systemDNS {
-		s.Dial = DialWithSystemDNS(s.Dial)
+	if s.Resolver != nil {
+		s.dial = dialWithLocalDNS(s.Resolver, s.Dialer)
+	} else {
+		s.dial = s.Dialer.DialContext
 	}
 
 	s.transport = &http.Transport{
-		DialContext:         s.Dial,
+		DialContext:         s.dial,
 		DisableCompression:  true,
 		MaxIdleConnsPerHost: 100,
 	}
@@ -59,7 +66,7 @@ func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var connectSuccess = []byte(" 200 Connection Established\r\n\r\n")
 
 func (s *HTTPServer) handleConnect(w http.ResponseWriter, r *http.Request) {
-	peer, err := s.Dial(r.Context(), "tcp", r.Host)
+	peer, err := s.dial(r.Context(), "tcp", r.Host)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

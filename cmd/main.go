@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/DevonTM/wiretunnel"
+	"github.com/DevonTM/wiretunnel/resolver"
 )
 
 func init() {
@@ -16,7 +17,7 @@ func init() {
 	flag.StringVar(&socks5Addr, "saddr", ":1080", "SOCKS5 server address\n$SOCKS5_ADDR")
 	flag.StringVar(&socks5User, "suser", "", "SOCKS5 proxy username\n$SOCKS5_USER")
 	flag.StringVar(&socks5Pass, "spass", "", "SOCKS5 proxy password\n$SOCKS5_PASS")
-	flag.BoolVar(&systemDNS, "sysdns", false, "Resolve address with system DNS\n$SYSTEM_DNS")
+	flag.BoolVar(&localDNS, "ldns", false, "Resolve address with local DNS\n$LOCAL_DNS")
 	flag.BoolVar(&showVersion, "v", false, "Print version and exit")
 	flag.Parse()
 }
@@ -37,8 +38,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if systemDNS {
-		wiretunnel.UseSystemDNS()
+	var r *resolver.Resolver
+	if localDNS {
+		r, err = resolver.NewResolver(d)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	var wg sync.WaitGroup
@@ -49,7 +54,8 @@ func main() {
 			Address:  httpAddr,
 			Username: httpUser,
 			Password: httpPass,
-			Dial:     d.DialContext,
+			Dialer:   d,
+			Resolver: r,
 		}
 		log.Println("HTTP proxy server listening on", httpAddr)
 		err := httpServer.ListenAndServe()
@@ -65,6 +71,7 @@ func main() {
 			Username: socks5User,
 			Password: socks5Pass,
 			Dialer:   d,
+			Resolver: r,
 		}
 		log.Println("SOCKS5 proxy server listening on", socks5Addr)
 		err := socks5Server.ListenAndServe()

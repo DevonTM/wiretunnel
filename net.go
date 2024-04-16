@@ -2,8 +2,10 @@ package wiretunnel
 
 import (
 	"context"
+	"fmt"
 	"net"
 
+	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
 )
 
@@ -12,29 +14,26 @@ func NewDialer(path string) (*wiredialer.WireDialer, error) {
 	return wiredialer.NewDialerFromFile(path)
 }
 
-var systemDNS bool
-
-// UseSystemDNS sets the resolver to resolve hostnames locally instead of remotely in the WireGuard network.
-func UseSystemDNS() {
-	systemDNS = true
-	net.DefaultResolver.PreferGo = true
-}
-
-// DialWithSystemDNS returns a wrapped dial function that uses the system resolver to resolve hostnames.
-func DialWithSystemDNS(dial func(context.Context, string, string) (net.Conn, error)) func(context.Context, string, string) (net.Conn, error) {
+// dialWithLocalDNS returns a dial function that uses a local DNS resolver to resolve the hostname before dialing.
+func dialWithLocalDNS(r *resolver.Resolver, d *wiredialer.WireDialer) func(context.Context, string, string) (net.Conn, error) {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dial: %w", err)
 		}
 
-		addrs, err := net.DefaultResolver.LookupHost(ctx, host)
+		addrs, err := r.LookupHost(host)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dial: %w", err)
 		}
 
-		host = addrs[0]
-		address = net.JoinHostPort(host, port)
-		return dial(ctx, network, address)
+		for _, addr := range addrs {
+			conn, err := d.DialContext(ctx, network, net.JoinHostPort(addr, port))
+			if err == nil {
+				return conn, nil
+			}
+		}
+
+		return nil, fmt.Errorf("dial: failed to dial %s", address)
 	}
 }
