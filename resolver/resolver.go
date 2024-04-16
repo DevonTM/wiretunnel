@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net"
-	"sort"
 	"sync"
 	"time"
 
@@ -107,12 +106,6 @@ func (r *Resolver) LookupHost(host string) ([]string, error) {
 		return nil, err
 	}
 
-	if network == "ip" {
-		sort.Slice(rec.ips, func(i, _ int) bool {
-			return rec.ips[i].To4() == nil
-		})
-	}
-
 	names := make([]string, len(rec.ips))
 	for i, ip := range rec.ips {
 		names[i] = ip.String()
@@ -130,7 +123,7 @@ type dnsRecord struct {
 }
 
 func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
-	ips := []net.IP{}
+	var ip4, ip6 []net.IP
 	var ttl uint32
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -141,8 +134,8 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 		go func() {
 			defer wg.Done()
 			if rec, err := r.lookupA(host); err == nil {
+				ip4 = rec.ips
 				mu.Lock()
-				ips = append(ips, rec.ips...)
 				ttl = rec.ttl
 				mu.Unlock()
 			}
@@ -155,8 +148,8 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 		go func() {
 			defer wg.Done()
 			if rec, err := r.lookupAAAA(host); err == nil {
+				ip6 = rec.ips
 				mu.Lock()
-				ips = append(ips, rec.ips...)
 				ttl = rec.ttl
 				mu.Unlock()
 			}
@@ -165,6 +158,7 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 
 	wg.Wait()
 
+	ips := append(ip6, ip4...)
 	if len(ips) == 0 {
 		return nil, &net.DNSError{
 			Err:        "no such host",
