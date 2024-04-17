@@ -24,7 +24,7 @@ func dialWithResolver(dial dialFunc, r *resolver.Resolver) dialFunc {
 			return nil, fmt.Errorf("dial: %w", err)
 		}
 
-		addrs, err := r.LookupHost(host)
+		addrs, err := r.LookupHost(ctx, host)
 		if err != nil {
 			return nil, fmt.Errorf("dial: %w", err)
 		}

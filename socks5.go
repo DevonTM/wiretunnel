@@ -45,7 +45,7 @@ func (s *SOCKS5Server) Resolve(ctx context.Context, name string) (context.Contex
 	var addrs []string
 	var err error
 	if s.Resolver != nil {
-		addrs, err = s.Resolver.LookupHost(name)
+		addrs, err = s.Resolver.LookupHost(ctx, name)
 	} else {
 		addrs, err = s.Dialer.LookupContextHost(ctx, name)
 	}

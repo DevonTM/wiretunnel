@@ -65,7 +65,7 @@ func NewResolver(d *wiredialer.WireDialer) (*Resolver, error) {
 }
 
 // LookupHost looks up the given host using the local resolver.
-func (r *Resolver) LookupHost(host string) ([]string, error) {
+func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error) {
 	if net.ParseIP(host) != nil {
 		return []string{host}, nil
 	}
@@ -98,7 +98,7 @@ func (r *Resolver) LookupHost(host string) ([]string, error) {
 		return nil, errors.New("no network available")
 	}
 
-	rec, err := r.lookupIP(network, host)
+	rec, err := r.lookupIP(ctx, network, host)
 	if err != nil {
 		r.mutex.Lock()
 		r.cache.Set(host, nil, 5*time.Minute)
@@ -122,7 +122,7 @@ type dnsRecord struct {
 	ttl uint32
 }
 
-func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
+func (r *Resolver) lookupIP(ctx context.Context, network, host string) (*dnsRecord, error) {
 	var ip4, ip6 []net.IP
 	var ttl uint32
 	var wg sync.WaitGroup
@@ -133,7 +133,7 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if rec, err := r.lookupA(host); err == nil {
+			if rec, err := r.lookupA(ctx, host); err == nil {
 				ip4 = rec.ips
 				mu.Lock()
 				ttl = rec.ttl
@@ -147,7 +147,7 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if rec, err := r.lookupAAAA(host); err == nil {
+			if rec, err := r.lookupAAAA(ctx, host); err == nil {
 				ip6 = rec.ips
 				mu.Lock()
 				ttl = rec.ttl
@@ -174,11 +174,11 @@ func (r *Resolver) lookupIP(network, host string) (*dnsRecord, error) {
 	}, nil
 }
 
-func (r *Resolver) lookupA(host string) (*dnsRecord, error) {
+func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeA)
 	m.SetEdns0(r.udpSize, true)
-	rep, _, err := r.client.Exchange(m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	rep, _, err := r.client.ExchangeContext(ctx, m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
 	if err != nil {
 		return nil, err
 	}
@@ -200,11 +200,11 @@ func (r *Resolver) lookupA(host string) (*dnsRecord, error) {
 	}, nil
 }
 
-func (r *Resolver) lookupAAAA(host string) (*dnsRecord, error) {
+func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeAAAA)
 	m.SetEdns0(r.udpSize, true)
-	rep, _, err := r.client.Exchange(m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	rep, _, err := r.client.ExchangeContext(ctx, m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
 	if err != nil {
 		return nil, err
 	}
