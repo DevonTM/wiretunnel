@@ -26,21 +26,40 @@ type Resolver struct {
 	udpSize uint16
 	haveIP4 bool
 	haveIP6 bool
+	dial    func(context.Context, string, string) (net.Conn, error)
 }
 
 // NewResolver creates a new Resolver.
-func NewResolver(d *wiredialer.WireDialer) (*Resolver, error) {
-	cfg, err := getConfig()
-	if err != nil {
-		return nil, err
-	}
-
+func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*Resolver, error) {
 	r := &Resolver{
 		client:  new(dns.Client),
-		config:  cfg,
 		cache:   cache.New(0, 10*time.Minute),
 		mutex:   new(sync.RWMutex),
 		udpSize: 1232,
+	}
+
+	if localDNS {
+		var err error
+		r.config, err = getConfig()
+		if err != nil {
+			return nil, err
+		}
+		r.dial = (&net.Dialer{}).DialContext
+	} else {
+		addrs := d.GetDNS()
+		servers := make([]string, len(addrs))
+		for i, addr := range addrs {
+			servers[i] = addr.String()
+		}
+		r.config = &dns.ClientConfig{
+			Servers:  servers,
+			Search:   []string{},
+			Port:     "53",
+			Ndots:    1,
+			Timeout:  5,
+			Attempts: 2,
+		}
+		r.dial = d.DialContext
 	}
 
 	var wg sync.WaitGroup
@@ -75,7 +94,7 @@ func NewResolver(d *wiredialer.WireDialer) (*Resolver, error) {
 	return r, nil
 }
 
-// LookupHost looks up the given host using the local resolver.
+// LookupHost looks up the IP addresses for the given host.
 func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error) {
 	if net.ParseIP(host) != nil {
 		return []string{host}, nil
@@ -100,8 +119,6 @@ func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error
 		network = "ip4"
 	} else if r.haveIP6 {
 		network = "ip6"
-	} else {
-		return nil, ErrNoNetwork
 	}
 
 	rec, err := r.lookupIP(ctx, network, host)
@@ -179,7 +196,7 @@ func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error)
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeA)
 	m.SetEdns0(r.udpSize, true)
-	rep, _, err := r.client.ExchangeContext(ctx, m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	rep, _, err := r.exchangeContext(ctx, m)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +222,7 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeAAAA)
 	m.SetEdns0(r.udpSize, true)
-	rep, _, err := r.client.ExchangeContext(ctx, m, net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	rep, _, err := r.exchangeContext(ctx, m)
 	if err != nil {
 		return nil, err
 	}
@@ -227,6 +244,24 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 	}, nil
 }
 
+func (r *Resolver) exchangeContext(ctx context.Context, m *dns.Msg) (rep *dns.Msg, rtt time.Duration, err error) {
+	conn := new(dns.Conn)
+	conn.Conn, err = r.dial(ctx, "udp", net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	if err != nil {
+		return nil, 0, err
+	}
+	return r.client.ExchangeWithConnContext(ctx, m, conn)
+}
+
+func (r *Resolver) errNoHost(host string) error {
+	return &net.DNSError{
+		Err:        "no such host",
+		Name:       host,
+		Server:     r.config.Servers[0],
+		IsNotFound: true,
+	}
+}
+
 func combineIPs(ip1, ip2 []net.IP) []net.IP {
 	ips := make([]net.IP, 0, len(ip1)+len(ip2))
 	i1, i2 := 0, 0
@@ -241,13 +276,4 @@ func combineIPs(ip1, ip2 []net.IP) []net.IP {
 		}
 	}
 	return ips
-}
-
-func (r *Resolver) errNoHost(host string) error {
-	return &net.DNSError{
-		Err:        "no such host",
-		Name:       host + ".",
-		Server:     r.config.Servers[0],
-		IsNotFound: true,
-	}
 }

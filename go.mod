@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/botanica-consulting/wiredialer v0.0.0-20230710124424-ca42731e9a5c
-	github.com/miekg/dns v1.1.58
+	github.com/miekg/dns v1.1.59
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/things-go/go-socks5 v0.0.5
 	golang.org/x/sys v0.19.0
@@ -23,4 +23,4 @@ require (
 	gvisor.dev/gvisor v0.0.0-20240315190121-2be91ac8c110 // indirect
 )
 
-replace github.com/botanica-consulting/wiredialer => github.com/DevonTM/wiredialer v0.1.1
+replace github.com/botanica-consulting/wiredialer => github.com/DevonTM/wiredialer v0.0.0-20240417131724-b23e84cbc1fe

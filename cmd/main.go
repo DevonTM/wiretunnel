@@ -39,12 +39,9 @@ func main() {
 		log.Fatal(fmt.Errorf("wireguard: error: %w", err))
 	}
 
-	var r *resolver.Resolver
-	if localDNS {
-		r, err = resolver.NewResolver(d)
-		if err != nil {
-			log.Fatal(fmt.Errorf("resolver: error: %w", err))
-		}
+	r, err := resolver.NewResolver(d, localDNS)
+	if err != nil {
+		log.Fatal(fmt.Errorf("resolver: error: %w", err))
 	}
 
 	var wg sync.WaitGroup

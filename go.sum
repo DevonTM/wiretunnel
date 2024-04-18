@@ -1,11 +1,11 @@
-github.com/DevonTM/wiredialer v0.1.1 h1:2+/lqcM2/kRPWbSPovQSU2aktzIpM+VeP9ixmriRQTw=
-github.com/DevonTM/wiredialer v0.1.1/go.mod h1:iwH1B6e9AP9oPmQ21GHUr+NBGCC/Q0WzFlL/l6EAkEg=
+github.com/DevonTM/wiredialer v0.0.0-20240417131724-b23e84cbc1fe h1:XYpNSq+HxfgHtCDx5DXwYryr9Ru4x8Ts+a7dD7iYzN4=
+github.com/DevonTM/wiredialer v0.0.0-20240417131724-b23e84cbc1fe/go.mod h1:iwH1B6e9AP9oPmQ21GHUr+NBGCC/Q0WzFlL/l6EAkEg=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/btree v1.1.2 h1:xf4v41cLI2Z6FxbKm+8Bu+m8ifhj15JuZ9sa0jZCMUU=
 github.com/google/btree v1.1.2/go.mod h1:qOPhT0dTNdNzV6Z/lhRX0YXUafgPLFUh+gZMl761Gm4=
-github.com/miekg/dns v1.1.58 h1:ca2Hdkz+cDg/7eNF6V56jjzuZ4aCAE+DbVkILdQWG/4=
-github.com/miekg/dns v1.1.58/go.mod h1:Ypv+3b/KadlvW9vJfXOTf300O4UqaHFzFCuHz+rPkBY=
+github.com/miekg/dns v1.1.59 h1:C9EXc/UToRwKLhK5wKU/I4QVsBUc8kE6MkHBkeypWZs=
+github.com/miekg/dns v1.1.59/go.mod h1:nZpewl5p6IvctfgrckopVx2OlSEHPRO/U4SYkRklrEk=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
