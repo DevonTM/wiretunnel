@@ -12,6 +12,12 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
+var (
+	ErrNoNetwork    = errors.New("no network available")
+	ErrNoARecord    = errors.New("no A record")
+	ErrNoAAAARecord = errors.New("no AAAA record")
+)
+
 type Resolver struct {
 	client  *dns.Client
 	config  *dns.ClientConfig
@@ -61,6 +67,11 @@ func NewResolver(d *wiredialer.WireDialer) (*Resolver, error) {
 	}()
 
 	wg.Wait()
+
+	if !r.haveIP4 && !r.haveIP6 {
+		return nil, ErrNoNetwork
+	}
+
 	return r, nil
 }
 
@@ -78,12 +89,7 @@ func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error
 		if ok {
 			return addrs, nil
 		} else {
-			return nil, &net.DNSError{
-				Err:        "no such host",
-				Name:       host + ".",
-				Server:     "local",
-				IsNotFound: true,
-			}
+			return nil, r.errNoHost(host)
 		}
 	}
 
@@ -95,7 +101,7 @@ func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error
 	} else if r.haveIP6 {
 		network = "ip6"
 	} else {
-		return nil, errors.New("no network available")
+		return nil, ErrNoNetwork
 	}
 
 	rec, err := r.lookupIP(ctx, network, host)
@@ -160,12 +166,7 @@ func (r *Resolver) lookupIP(ctx context.Context, network, host string) (*dnsReco
 
 	ips := combineIPs(ip6, ip4)
 	if len(ips) == 0 {
-		return nil, &net.DNSError{
-			Err:        "no such host",
-			Name:       host + ".",
-			Server:     "local",
-			IsNotFound: true,
-		}
+		return nil, r.errNoHost(host)
 	}
 
 	return &dnsRecord{
@@ -184,7 +185,7 @@ func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error)
 	}
 
 	if rep.Rcode != dns.RcodeSuccess || len(rep.Answer) == 0 {
-		return nil, errors.New("no A record")
+		return nil, ErrNoARecord
 	}
 
 	var ips []net.IP
@@ -210,7 +211,7 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 	}
 
 	if rep.Rcode != dns.RcodeSuccess || len(rep.Answer) == 0 {
-		return nil, errors.New("no AAAA record")
+		return nil, ErrNoAAAARecord
 	}
 
 	var ips []net.IP
@@ -240,4 +241,13 @@ func combineIPs(ip1, ip2 []net.IP) []net.IP {
 		}
 	}
 	return ips
+}
+
+func (r *Resolver) errNoHost(host string) error {
+	return &net.DNSError{
+		Err:        "no such host",
+		Name:       host + ".",
+		Server:     r.config.Servers[0],
+		IsNotFound: true,
+	}
 }

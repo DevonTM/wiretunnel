@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"sync"
 
@@ -30,19 +31,19 @@ func main() {
 
 	err := configParse()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("config: error: %w", err))
 	}
 
 	d, err := wiretunnel.NewDialer(wgConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("wireguard: error: %w", err))
 	}
 
 	var r *resolver.Resolver
 	if localDNS {
 		r, err = resolver.NewResolver(d)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Errorf("resolver: error: %w", err))
 		}
 	}
 
@@ -57,10 +58,10 @@ func main() {
 			Dialer:   d,
 			Resolver: r,
 		}
-		log.Println("HTTP proxy server listening on", httpAddr)
+		log.Println("HTTP proxy server: listening on", httpAddr)
 		err := httpServer.ListenAndServe()
 		if err != nil {
-			log.Print(err)
+			log.Printf("HTTP proxy server: error: %v", err)
 		}
 		wg.Done()
 	}()
@@ -73,10 +74,10 @@ func main() {
 			Dialer:   d,
 			Resolver: r,
 		}
-		log.Println("SOCKS5 proxy server listening on", socks5Addr)
+		log.Println("SOCKS5 proxy server: listening on", socks5Addr)
 		err := socks5Server.ListenAndServe()
 		if err != nil {
-			log.Print(err)
+			log.Printf("SOCKS5 proxy server: error: %v", err)
 		}
 		wg.Done()
 	}()
