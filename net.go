@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
@@ -29,11 +30,25 @@ func dialWithResolver(dial dialFunc, r *resolver.Resolver) dialFunc {
 			return nil, fmt.Errorf("dial: %w", err)
 		}
 
+		// dynamically adjust the timeout based on the number of addresses
+		min := 2 * time.Second
+		max := 10 * time.Second
+		timeout := max / time.Duration(len(addrs))
+		if timeout < min {
+			timeout = min
+		}
+
 		for _, addr := range addrs {
+			ctx, cancel := context.WithTimeout(ctx, timeout)
+			defer cancel()
 			conn, err := dial(ctx, network, net.JoinHostPort(addr, port))
 			if err == nil {
 				return conn, nil
 			}
+			if err == context.Canceled {
+				return nil, fmt.Errorf("dial: %w", err)
+			}
+			cancel()
 		}
 
 		return nil, fmt.Errorf("dial: failed to dial %s", address)
