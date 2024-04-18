@@ -158,7 +158,7 @@ func (r *Resolver) lookupIP(ctx context.Context, network, host string) (*dnsReco
 
 	wg.Wait()
 
-	ips := append(ip6, ip4...)
+	ips := combineIPs(ip6, ip4)
 	if len(ips) == 0 {
 		return nil, &net.DNSError{
 			Err:        "no such host",
@@ -224,4 +224,20 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 		ips: ips,
 		ttl: rep.Answer[0].Header().Ttl,
 	}, nil
+}
+
+func combineIPs(ip1, ip2 []net.IP) []net.IP {
+	ips := make([]net.IP, 0, len(ip1)+len(ip2))
+	i1, i2 := 0, 0
+	for i1 < len(ip1) || i2 < len(ip2) {
+		if i1 < len(ip1) {
+			ips = append(ips, ip1[i1])
+			i1++
+		}
+		if i2 < len(ip2) {
+			ips = append(ips, ip2[i2])
+			i2++
+		}
+	}
+	return ips
 }
