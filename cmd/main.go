@@ -12,10 +12,10 @@ import (
 
 func init() {
 	flag.StringVar(&wgConfigPath, "cfg", "", "WireGuard configuration file\n$WG_CONFIG")
-	flag.StringVar(&httpAddr, "haddr", ":8080", "HTTP server address\n$HTTP_ADDR")
+	flag.StringVar(&httpAddr, "haddr", ":8080", "HTTP server address, set '0' to disable\n$HTTP_ADDR")
 	flag.StringVar(&httpUser, "huser", "", "HTTP proxy username\n$HTTP_USER")
 	flag.StringVar(&httpPass, "hpass", "", "HTTP proxy password\n$HTTP_PASS")
-	flag.StringVar(&socks5Addr, "saddr", ":1080", "SOCKS5 server address\n$SOCKS5_ADDR")
+	flag.StringVar(&socks5Addr, "saddr", ":1080", "SOCKS5 server address, set '0' to disable\n$SOCKS5_ADDR")
 	flag.StringVar(&socks5User, "suser", "", "SOCKS5 proxy username\n$SOCKS5_USER")
 	flag.StringVar(&socks5Pass, "spass", "", "SOCKS5 proxy password\n$SOCKS5_PASS")
 	flag.BoolVar(&localDNS, "ldns", false, "Resolve address with local DNS\n$LOCAL_DNS")
@@ -45,39 +45,44 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
 
-	go func() {
-		httpServer := &wiretunnel.HTTPServer{
-			Address:  httpAddr,
-			Username: httpUser,
-			Password: httpPass,
-			Dialer:   d,
-			Resolver: r,
-		}
-		log.Println("HTTP proxy server: listening on", httpAddr)
-		err := httpServer.ListenAndServe()
-		if err != nil {
-			log.Printf("HTTP proxy server: error: %v", err)
-		}
-		wg.Done()
-	}()
+	if httpAddr != "0" {
+		wg.Add(1)
+		go func() {
+			httpServer := &wiretunnel.HTTPServer{
+				Address:  httpAddr,
+				Username: httpUser,
+				Password: httpPass,
+				Dialer:   d,
+				Resolver: r,
+			}
+			log.Println("HTTP proxy server: listening on", httpAddr)
+			err := httpServer.ListenAndServe()
+			if err != nil {
+				log.Printf("HTTP proxy server: error: %v", err)
+			}
+			wg.Done()
+		}()
+	}
 
-	go func() {
-		socks5Server := &wiretunnel.SOCKS5Server{
-			Address:  socks5Addr,
-			Username: socks5User,
-			Password: socks5Pass,
-			Dialer:   d,
-			Resolver: r,
-		}
-		log.Println("SOCKS5 proxy server: listening on", socks5Addr)
-		err := socks5Server.ListenAndServe()
-		if err != nil {
-			log.Printf("SOCKS5 proxy server: error: %v", err)
-		}
-		wg.Done()
-	}()
+	if socks5Addr != "0" {
+		wg.Add(1)
+		go func() {
+			socks5Server := &wiretunnel.SOCKS5Server{
+				Address:  socks5Addr,
+				Username: socks5User,
+				Password: socks5Pass,
+				Dialer:   d,
+				Resolver: r,
+			}
+			log.Println("SOCKS5 proxy server: listening on", socks5Addr)
+			err := socks5Server.ListenAndServe()
+			if err != nil {
+				log.Printf("SOCKS5 proxy server: error: %v", err)
+			}
+			wg.Done()
+		}()
+	}
 
 	wg.Wait()
 }
