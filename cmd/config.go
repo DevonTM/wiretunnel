@@ -25,44 +25,36 @@ var (
 )
 
 func configParse() error {
-	env := os.Getenv("WG_CONFIG")
 	if wgConfigPath == "" {
-		wgConfigPath = env
+		wgConfigPath = os.Getenv("WG_CONFIG")
 	}
 
-	env = os.Getenv("HTTP_ADDR")
-	if (httpAddr == "" || httpAddr == ":8080") && env != "" {
-		httpAddr = env
+	if httpAddr == "" {
+		httpAddr = os.Getenv("HTTP_ADDR")
 	}
 
-	env = os.Getenv("HTTP_USER")
 	if httpUser == "" {
-		httpUser = env
+		httpUser = os.Getenv("HTTP_USER")
 	}
 
-	env = os.Getenv("HTTP_PASS")
 	if httpPass == "" {
-		httpPass = env
+		httpPass = os.Getenv("HTTP_PASS")
 	}
 
-	env = os.Getenv("SOCKS5_ADDR")
-	if (socks5Addr == "" || socks5Addr == ":1080") && env != "" {
-		socks5Addr = env
+	if socks5Addr == "" {
+		socks5Addr = os.Getenv("SOCKS5_ADDR")
 	}
 
-	env = os.Getenv("SOCKS5_USER")
 	if socks5User == "" {
-		socks5User = env
+		socks5User = os.Getenv("SOCKS5_USER")
 	}
 
-	env = os.Getenv("SOCKS5_PASS")
 	if socks5Pass == "" {
-		socks5Pass = env
+		socks5Pass = os.Getenv("SOCKS5_PASS")
 	}
 
-	env = os.Getenv("LOCAL_DNS")
 	if !localDNS {
-		localDNS = env == "true"
+		localDNS = os.Getenv("LOCAL_DNS") == "true"
 	}
 
 	if wgConfigPath == "" {
@@ -70,11 +62,11 @@ func configParse() error {
 	}
 
 	if httpAddr == "" {
-		return errors.New("HTTP server address is required")
+		httpAddr = ":8080"
 	}
 
 	if socks5Addr == "" {
-		return errors.New("SOCKS5 server address is required")
+		socks5Addr = ":1080"
 	}
 
 	return nil
