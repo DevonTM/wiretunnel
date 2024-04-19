@@ -21,7 +21,7 @@ type SOCKS5Server struct {
 	Resolver *resolver.Resolver
 
 	dial   dialFunc
-	lookup func(string) ([]string, error)
+	lookup func(host string) ([]string, error)
 }
 
 // ListenAndServe listens on the s.Address and serves SOCKS5 requests.

@@ -15,7 +15,7 @@ func NewDialer(path string) (*wiredialer.WireDialer, error) {
 	return wiredialer.NewDialerFromFile(path)
 }
 
-type dialFunc func(context.Context, string, string) (net.Conn, error)
+type dialFunc func(ctx context.Context, network string, address string) (net.Conn, error)
 
 // dialWithResolver returns a dial function that resolves the address with the given resolver.
 func dialWithResolver(dial dialFunc, r *resolver.Resolver) dialFunc {
