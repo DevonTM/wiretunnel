@@ -13,7 +13,7 @@ import (
 
 // getConfig returns the DNS configuration from the Windows network adapter settings.
 // Source: https://gist.github.com/moloch--/9fb1c8497b09b45c840fe93dd23b1e98
-func getConfig() (*dns.ClientConfig, error) {
+func GetConfig() (*dns.ClientConfig, error) {
 	l := uint32(20000)
 	b := make([]byte, l)
 

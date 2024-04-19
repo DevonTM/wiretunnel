@@ -12,13 +12,11 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-var (
-	ErrNoNetwork    = errors.New("no network available")
-	ErrNoARecord    = errors.New("no A record")
-	ErrNoAAAARecord = errors.New("no AAAA record")
-)
+type Resolver interface {
+	LookupHost(ctx context.Context, host string) ([]string, error)
+}
 
-type Resolver struct {
+type resolver struct {
 	client  *dns.Client
 	config  *dns.ClientConfig
 	cache   *cache.Cache
@@ -29,9 +27,15 @@ type Resolver struct {
 	dial    func(context.Context, string, string) (net.Conn, error)
 }
 
+var (
+	errNoNetwork    = errors.New("no network available")
+	errNoARecord    = errors.New("no A record")
+	errNoAAAARecord = errors.New("no AAAA record")
+)
+
 // NewResolver creates a new Resolver.
-func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*Resolver, error) {
-	r := &Resolver{
+func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*resolver, error) {
+	r := &resolver{
 		client:  new(dns.Client),
 		cache:   cache.New(0, 10*time.Minute),
 		mutex:   new(sync.RWMutex),
@@ -40,7 +44,7 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*Resolver, error) {
 
 	if localDNS {
 		var err error
-		r.config, err = getConfig()
+		r.config, err = GetConfig()
 		if err != nil {
 			return nil, err
 		}
@@ -88,14 +92,14 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*Resolver, error) {
 	wg.Wait()
 
 	if !r.haveIP4 && !r.haveIP6 {
-		return nil, ErrNoNetwork
+		return nil, errNoNetwork
 	}
 
 	return r, nil
 }
 
 // LookupHost looks up the IP addresses for the given host.
-func (r *Resolver) LookupHost(ctx context.Context, host string) ([]string, error) {
+func (r *resolver) LookupHost(ctx context.Context, host string) ([]string, error) {
 	if net.ParseIP(host) != nil {
 		return []string{host}, nil
 	}
@@ -145,7 +149,7 @@ type dnsRecord struct {
 	ttl uint32
 }
 
-func (r *Resolver) lookupIP(ctx context.Context, network, host string) (*dnsRecord, error) {
+func (r *resolver) lookupIP(ctx context.Context, network, host string) (*dnsRecord, error) {
 	var ip4, ip6 []net.IP
 	var ttl uint32
 	var wg sync.WaitGroup
@@ -192,7 +196,7 @@ func (r *Resolver) lookupIP(ctx context.Context, network, host string) (*dnsReco
 	}, nil
 }
 
-func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error) {
+func (r *resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeA)
 	m.SetEdns0(r.udpSize, true)
@@ -202,7 +206,7 @@ func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error)
 	}
 
 	if rep.Rcode != dns.RcodeSuccess || len(rep.Answer) == 0 {
-		return nil, ErrNoARecord
+		return nil, errNoARecord
 	}
 
 	var ips []net.IP
@@ -218,7 +222,7 @@ func (r *Resolver) lookupA(ctx context.Context, host string) (*dnsRecord, error)
 	}, nil
 }
 
-func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, error) {
+func (r *resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(host), dns.TypeAAAA)
 	m.SetEdns0(r.udpSize, true)
@@ -228,7 +232,7 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 	}
 
 	if rep.Rcode != dns.RcodeSuccess || len(rep.Answer) == 0 {
-		return nil, ErrNoAAAARecord
+		return nil, errNoAAAARecord
 	}
 
 	var ips []net.IP
@@ -244,7 +248,7 @@ func (r *Resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 	}, nil
 }
 
-func (r *Resolver) exchangeContext(ctx context.Context, m *dns.Msg) (rep *dns.Msg, rtt time.Duration, err error) {
+func (r *resolver) exchangeContext(ctx context.Context, m *dns.Msg) (rep *dns.Msg, rtt time.Duration, err error) {
 	conn := new(dns.Conn)
 	conn.Conn, err = r.dial(ctx, "udp", net.JoinHostPort(r.config.Servers[0], r.config.Port))
 	if err != nil {
@@ -253,7 +257,7 @@ func (r *Resolver) exchangeContext(ctx context.Context, m *dns.Msg) (rep *dns.Ms
 	return r.client.ExchangeWithConnContext(ctx, m, conn)
 }
 
-func (r *Resolver) errNoHost(host string) error {
+func (r *resolver) errNoHost(host string) error {
 	return &net.DNSError{
 		Err:        "no such host",
 		Name:       host,

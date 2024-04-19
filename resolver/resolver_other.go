@@ -10,6 +10,6 @@ import (
 )
 
 // getConfig for other OS not implemented yet.
-func getConfig() (*dns.ClientConfig, error) {
+func GetConfig() (*dns.ClientConfig, error) {
 	return nil, errors.New("not implemented")
 }

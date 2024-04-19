@@ -19,7 +19,7 @@ type HTTPServer struct {
 	Password string
 
 	Dialer   *wiredialer.WireDialer
-	Resolver *resolver.Resolver
+	Resolver resolver.Resolver
 
 	dial      dialFunc
 	transport *http.Transport

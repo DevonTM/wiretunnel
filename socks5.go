@@ -18,7 +18,7 @@ type SOCKS5Server struct {
 	Password string
 
 	Dialer   *wiredialer.WireDialer
-	Resolver *resolver.Resolver
+	Resolver resolver.Resolver
 
 	dial   dialFunc
 	lookup func(host string) ([]string, error)
