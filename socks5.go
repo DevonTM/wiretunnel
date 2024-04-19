@@ -2,11 +2,14 @@ package wiretunnel
 
 import (
 	"context"
+	"errors"
+	"log"
 	"net"
 
 	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
-	"github.com/things-go/go-socks5"
+	"github.com/txthinking/runnergroup"
+	"github.com/txthinking/socks5"
 )
 
 type SOCKS5Server struct {
@@ -16,42 +19,111 @@ type SOCKS5Server struct {
 
 	Dialer   *wiredialer.WireDialer
 	Resolver *resolver.Resolver
+
+	dial   dialFunc
+	lookup func(string) ([]string, error)
 }
 
 // ListenAndServe listens on the s.Address and serves SOCKS5 requests.
 func (s *SOCKS5Server) ListenAndServe() error {
-	var authMethod socks5.Authenticator
-	if s.Username != "" {
-		authMethod = socks5.UserPassAuthenticator{
-			Credentials: socks5.StaticCredentials{
-				s.Username: s.Password,
-			},
+	s.dial = dialFilter(s.Dialer.DialContext)
+	s.lookup = s.Dialer.LookupHost
+	if s.Resolver != nil {
+		s.dial = dialWithResolver(s.dial, s.Resolver)
+		s.lookup = func(host string) ([]string, error) {
+			return s.Resolver.LookupHost(context.Background(), host)
 		}
-	} else {
-		authMethod = socks5.NoAuthAuthenticator{}
 	}
 
-	server := socks5.NewServer(
-		socks5.WithAuthMethods([]socks5.Authenticator{authMethod}),
-		socks5.WithDial(dialFilter(s.Dialer.DialContext)),
-		socks5.WithResolver(s),
-	)
+	if s.Username != "" && s.Password == "" {
+		return errors.New("username is set but password is empty")
+	}
 
-	return server.ListenAndServe("tcp", s.Address)
+	ss, err := socks5.NewClassicServer(s.Address, "", s.Username, s.Password, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	return s.listenAndServe(ss)
 }
 
-// Resolve implements the socks5.Resolver interface.
-func (s *SOCKS5Server) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
-	var addrs []string
-	var err error
-	if s.Resolver != nil {
-		addrs, err = s.Resolver.LookupHost(ctx, name)
-	} else {
-		addrs, err = s.Dialer.LookupContextHost(ctx, name)
-	}
+func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", ss.Addr)
 	if err != nil {
-		return ctx, nil, err
+		return err
 	}
-	ip := net.ParseIP(addrs[0])
-	return ctx, ip, nil
+	l, err := net.ListenTCP("tcp", tcpAddr)
+	if err != nil {
+		return err
+	}
+
+	ss.RunnerGroup.Add(&runnergroup.Runner{
+		Start: func() error {
+			for {
+				c, err := l.AcceptTCP()
+				if err != nil {
+					return err
+				}
+				go func(c *net.TCPConn) {
+					defer c.Close()
+					err := ss.Negotiate(c)
+					if err != nil {
+						return
+					}
+					r, err := ss.GetRequest(c)
+					if err != nil {
+						return
+					}
+					err = s.tcpHandle(c, r)
+					if err != nil {
+						log.Printf("SOCKS5 proxy server: TCP: %s: error: %v", c.RemoteAddr(), err)
+					}
+				}(c)
+			}
+		},
+		Stop: func() error {
+			return l.Close()
+		},
+	})
+
+	udpAddr, err := net.ResolveUDPAddr("udp", ss.Addr)
+	if err != nil {
+		l.Close()
+		return err
+	}
+	ss.UDPConn, err = net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		l.Close()
+		return err
+	}
+
+	ss.RunnerGroup.Add(&runnergroup.Runner{
+		Start: func() error {
+			for {
+				b := make([]byte, 65507)
+				n, addr, err := ss.UDPConn.ReadFromUDP(b)
+				if err != nil {
+					return err
+				}
+				go func(addr *net.UDPAddr, b []byte) {
+					d, err := socks5.NewDatagramFromBytes(b)
+					if err != nil {
+						return
+					}
+					if d.Frag != 0x00 {
+						return
+					}
+					err = s.udpHandle(ss, addr, d)
+					if err != nil {
+						log.Printf("SOCKS5 proxy server: UDP: %s: error: %v", addr, err)
+					}
+				}(addr, b[:n])
+			}
+		},
+		Stop: func() error {
+			return ss.UDPConn.Close()
+		},
+	})
+
+	return ss.RunnerGroup.Wait()
 }

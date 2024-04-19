@@ -6,7 +6,8 @@ require (
 	github.com/botanica-consulting/wiredialer v0.0.0-20230710124424-ca42731e9a5c
 	github.com/miekg/dns v1.1.59
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/things-go/go-socks5 v0.0.5
+	github.com/txthinking/runnergroup v0.0.0-20230325130830-408dc5853f86
+	github.com/txthinking/socks5 v0.0.0-20230325130024-4230056ae301
 	golang.org/x/sys v0.19.0
 )
 
