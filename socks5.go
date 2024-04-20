@@ -39,12 +39,12 @@ func (s *SOCKS5Server) ListenAndServe() error {
 		return errors.New("username is set but password is empty")
 	}
 
-	ss, err := socks5.NewClassicServer(s.Address, "", s.Username, s.Password, 0, 0)
+	server, err := socks5.NewClassicServer(s.Address, "", s.Username, s.Password, 0, 0)
 	if err != nil {
 		return err
 	}
 
-	return s.listenAndServe(ss)
+	return s.listenAndServe(server)
 }
 
 func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
