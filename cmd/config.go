@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const VERSION = "0.0.0"
+const VERSION = "1.0.0"
 
 var (
 	wgConfigPath string
