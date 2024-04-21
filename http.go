@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
@@ -90,20 +89,8 @@ func (s *HTTPServer) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		io.Copy(peer, conn)
-		wg.Done()
-	}()
-
-	go func() {
-		io.Copy(conn, peer)
-		wg.Done()
-	}()
-
-	wg.Wait()
+	go io.Copy(peer, conn)
+	io.Copy(conn, peer)
 }
 
 func (s *HTTPServer) handleOther(w http.ResponseWriter, r *http.Request) {

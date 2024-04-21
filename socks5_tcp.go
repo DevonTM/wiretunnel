@@ -15,32 +15,9 @@ func (s *SOCKS5Server) tcpHandle(c *net.TCPConn, r *socks5.Request) error {
 			return err
 		}
 		defer rc.Close()
-
-		go func() {
-			b := make([]byte, 4096)
-			for {
-				n, err := rc.Read(b)
-				if err != nil {
-					return
-				}
-				_, err = c.Write(b[:n])
-				if err != nil {
-					return
-				}
-			}
-		}()
-
-		b := make([]byte, 4096)
-		for {
-			n, err := c.Read(b)
-			if err != nil {
-				return nil
-			}
-			_, err = rc.Write(b[:n])
-			if err != nil {
-				return nil
-			}
-		}
+		go c.WriteTo(rc)
+		c.ReadFrom(rc)
+		return nil
 	}
 
 	if r.Cmd == socks5.CmdUDP {
@@ -48,7 +25,7 @@ func (s *SOCKS5Server) tcpHandle(c *net.TCPConn, r *socks5.Request) error {
 		if err != nil {
 			return err
 		}
-		io.Copy(io.Discard, c)
+		c.WriteTo(io.Discard)
 		return nil
 	}
 
