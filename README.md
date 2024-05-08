@@ -39,7 +39,7 @@ Wiretunnel is a userspace WireGuard client that acts as a proxy server. It suppo
 ## Compile
 
 ```bash
-go build -o wiretunnel github.com/DevonTM/wiretunnel/cmd
+go build ./cmd/wiretunnel
 ```
 
 ## License
