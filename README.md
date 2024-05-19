@@ -32,7 +32,7 @@ Wiretunnel is a userspace WireGuard client that acts as a proxy server. It suppo
 
 - `-spass string`: SOCKS5 proxy password. $SOCKS5_PASS
 
-- `-ldns boolean`: Resolve address with local DNS. $LOCAL_DNS
+- `-ldns boolean`: Resolve address locally. $LOCAL_DNS
 
 - `-v boolean`: Print version and exit
 
