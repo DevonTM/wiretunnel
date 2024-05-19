@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 
-	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
 	"github.com/txthinking/runnergroup"
 	"github.com/txthinking/socks5"
@@ -18,7 +17,7 @@ type SOCKS5Server struct {
 	Password string
 
 	Dialer   *wiredialer.WireDialer
-	Resolver resolver.Resolver
+	Resolver Resolver
 
 	dial   dialFunc
 	lookup func(host string) ([]string, error)

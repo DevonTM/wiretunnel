@@ -8,7 +8,6 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/txthinking/runnergroup v0.0.0-20230325130830-408dc5853f86
 	github.com/txthinking/socks5 v0.0.0-20230325130024-4230056ae301
-	golang.org/x/sys v0.20.0
 )
 
 require (
@@ -17,6 +16,7 @@ require (
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.21.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect

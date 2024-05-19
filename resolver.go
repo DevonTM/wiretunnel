@@ -1,8 +1,10 @@
-package resolver
+package wiretunnel
 
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -18,13 +20,13 @@ type Resolver interface {
 
 type resolver struct {
 	client  *dns.Client
-	config  *dns.ClientConfig
 	cache   *cache.Cache
 	mutex   *sync.RWMutex
+	server  string
 	udpSize uint16
 	haveIP4 bool
 	haveIP6 bool
-	dial    func(context.Context, string, string) (net.Conn, error)
+	dial    dialFunc
 }
 
 var (
@@ -42,60 +44,66 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*resolver, error) {
 		udpSize: 1232,
 	}
 
+	dnsAddrs := d.GetDNS()
+	r.server = net.JoinHostPort(dnsAddrs[0].String(), "53")
+	if len(dnsAddrs) > 1 {
+		log.Print("resolver: warning: only the first DNS server is used")
+	}
+
 	if localDNS {
-		var err error
-		r.config, err = GetConfig()
-		if err != nil {
-			return nil, err
-		}
 		r.dial = (&net.Dialer{}).DialContext
 	} else {
-		addrs := d.GetDNS()
-		servers := make([]string, len(addrs))
-		for i, addr := range addrs {
-			servers[i] = addr.String()
-		}
-		r.config = &dns.ClientConfig{
-			Servers:  servers,
-			Search:   []string{},
-			Port:     "53",
-			Ndots:    1,
-			Timeout:  5,
-			Attempts: 2,
-		}
 		r.dial = d.DialContext
 	}
 
+	err := r.testDNSConn()
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.testWGConn(d.DialContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (r *resolver) testDNSConn() error {
+	conn, err := r.dial(context.Background(), "udp", r.server)
+	if err != nil {
+		return fmt.Errorf("failed to connect to DNS server %s", r.server)
+	}
+	conn.Close()
+	return nil
+}
+
+func (r *resolver) testWGConn(dial dialFunc) error {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
 	go func() {
 		defer wg.Done()
-		conn, err := d.DialContext(ctx, "tcp", "1.1.1.1:53")
+		conn, err := dial(ctx, "tcp", "1.1.1.1:53")
 		if err == nil {
 			conn.Close()
 			r.haveIP4 = true
 		}
 	}()
-
 	go func() {
 		defer wg.Done()
-		conn, err := d.DialContext(ctx, "tcp", "[2606:4700:4700::1111]:53")
+		conn, err := dial(ctx, "tcp", "[2606:4700:4700::1111]:53")
 		if err == nil {
 			conn.Close()
 			r.haveIP6 = true
 		}
 	}()
-
 	wg.Wait()
-
 	if !r.haveIP4 && !r.haveIP6 {
-		return nil, errNoNetwork
+		return errNoNetwork
 	}
-
-	return r, nil
+	return nil
 }
 
 // LookupHost looks up the IP addresses for the given host.
@@ -250,20 +258,11 @@ func (r *resolver) lookupAAAA(ctx context.Context, host string) (*dnsRecord, err
 
 func (r *resolver) exchangeContext(ctx context.Context, m *dns.Msg) (rep *dns.Msg, rtt time.Duration, err error) {
 	conn := new(dns.Conn)
-	conn.Conn, err = r.dial(ctx, "udp", net.JoinHostPort(r.config.Servers[0], r.config.Port))
+	conn.Conn, err = r.dial(ctx, "udp", r.server)
 	if err != nil {
 		return nil, 0, err
 	}
 	return r.client.ExchangeWithConnContext(ctx, m, conn)
-}
-
-func (r *resolver) errNoHost(host string) error {
-	return &net.DNSError{
-		Err:        "no such host",
-		Name:       host,
-		Server:     r.config.Servers[0],
-		IsNotFound: true,
-	}
 }
 
 func combineIPs(ip1, ip2 []net.IP) []net.IP {
@@ -280,4 +279,13 @@ func combineIPs(ip1, ip2 []net.IP) []net.IP {
 		}
 	}
 	return ips
+}
+
+func (r *resolver) errNoHost(host string) error {
+	return &net.DNSError{
+		Err:        "no such host",
+		Name:       host,
+		Server:     r.server,
+		IsNotFound: true,
+	}
 }

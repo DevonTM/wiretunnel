@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/DevonTM/wiretunnel/resolver"
 	"github.com/botanica-consulting/wiredialer"
 )
 
@@ -18,7 +17,7 @@ type HTTPServer struct {
 	Password string
 
 	Dialer   *wiredialer.WireDialer
-	Resolver resolver.Resolver
+	Resolver Resolver
 
 	dial      dialFunc
 	transport *http.Transport

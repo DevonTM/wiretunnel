@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/DevonTM/wiretunnel"
-	"github.com/DevonTM/wiretunnel/resolver"
 )
 
 func init() {
@@ -18,7 +17,7 @@ func init() {
 	flag.StringVar(&socks5Addr, "saddr", "", "SOCKS5 server `address`, set '0' to disable, default ':1080'\n$SOCKS5_ADDR")
 	flag.StringVar(&socks5User, "suser", "", "SOCKS5 proxy `username`\n$SOCKS5_USER")
 	flag.StringVar(&socks5Pass, "spass", "", "SOCKS5 proxy `password`\n$SOCKS5_PASS")
-	flag.BoolVar(&localDNS, "ldns", false, "Resolve address with local DNS\n$LOCAL_DNS")
+	flag.BoolVar(&localDNS, "ldns", false, "Resolve address locally\n$LOCAL_DNS")
 	flag.BoolVar(&showVersion, "v", false, "Print version and exit")
 	flag.Parse()
 }
@@ -39,7 +38,7 @@ func main() {
 		log.Fatal(fmt.Errorf("wireguard: error: %w", err))
 	}
 
-	r, err := resolver.NewResolver(d, localDNS)
+	r, err := wiretunnel.NewResolver(d, localDNS)
 	if err != nil {
 		log.Fatal(fmt.Errorf("resolver: error: %w", err))
 	}
