@@ -19,6 +19,8 @@ type dialFunc func(ctx context.Context, network string, address string) (net.Con
 // dialWithResolver returns a dial function that resolves the address with the given resolver.
 func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		startTime := time.Now()
+
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
 			return nil, fmt.Errorf("dial: %w", err)
@@ -50,7 +52,7 @@ func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 			cancel()
 		}
 
-		return nil, fmt.Errorf("dial: failed to dial %s", address)
+		return nil, fmt.Errorf("dial: timeout when dialing %s after %.3f seconds", address, time.Since(startTime).Seconds())
 	}
 }
 
