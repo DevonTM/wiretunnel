@@ -21,6 +21,7 @@ var (
 
 	bypassList string
 	localDNS   bool
+	enableLog  bool
 
 	showVersion bool
 )
@@ -60,6 +61,10 @@ func configParse() error {
 
 	if !localDNS {
 		localDNS = os.Getenv("LOCAL_DNS") == "true"
+	}
+
+	if !enableLog {
+		enableLog = os.Getenv("ENABLE_LOG") == "true"
 	}
 
 	if wgConfigPath == "" {

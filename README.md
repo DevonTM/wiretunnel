@@ -36,6 +36,8 @@ Wiretunnel is a userspace WireGuard client that acts as a proxy server. It suppo
 
 - `-ldns boolean`: Resolve address locally. $LOCAL_DNS
 
+- `-log boolean`: Enable logging to stdout. $ENABLE_LOG
+
 - `-v boolean`: Print version and exit
 
 ## Compile

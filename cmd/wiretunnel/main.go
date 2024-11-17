@@ -19,6 +19,7 @@ func init() {
 	flag.StringVar(&socks5Pass, "spass", "", "SOCKS5 proxy `password`\n$SOCKS5_PASS")
 	flag.StringVar(&bypassList, "bl", "", "Bypass list of `IPs` separated by commas\n$BYPASS_LIST")
 	flag.BoolVar(&localDNS, "ldns", false, "Resolve address locally\n$LOCAL_DNS")
+	flag.BoolVar(&enableLog, "log", false, "Enable logging to stdout\n$ENABLE_LOG")
 	flag.BoolVar(&showVersion, "v", false, "Print version and exit")
 	flag.Parse()
 }
@@ -75,6 +76,7 @@ func main() {
 				Address:    socks5Addr,
 				Username:   socks5User,
 				Password:   socks5Pass,
+				EnableLog:  enableLog,
 				Dialer:     d,
 				BypassList: b,
 				Resolver:   r,

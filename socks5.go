@@ -16,6 +16,8 @@ type SOCKS5Server struct {
 	Username string
 	Password string
 
+	EnableLog bool
+
 	Dialer     *wiredialer.WireDialer
 	BypassList []*net.IPNet
 	Resolver   Resolver
@@ -75,7 +77,7 @@ func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
 						return
 					}
 					err = s.tcpHandle(c, r)
-					if err != nil {
+					if s.EnableLog && err != nil {
 						log.Printf("SOCKS5 proxy server: TCP: %s: ERROR: %v", c.RemoteAddr(), err)
 					}
 				}(c)
@@ -114,7 +116,7 @@ func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
 						return
 					}
 					err = s.udpHandle(ss, addr, d)
-					if err != nil {
+					if s.EnableLog && err != nil {
 						log.Printf("SOCKS5 proxy server: UDP: %s: ERROR: %v", addr, err)
 					}
 				}(addr, b[:n])
