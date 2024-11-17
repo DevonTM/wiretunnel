@@ -30,17 +30,17 @@ func main() {
 
 	err := configParse()
 	if err != nil {
-		log.Fatal(fmt.Errorf("config: ERROR: %w", err))
+		log.Fatal(fmt.Errorf("Config: ERROR: %w", err))
 	}
 
 	d, err := wiretunnel.NewDialer(wgConfigPath)
 	if err != nil {
-		log.Fatal(fmt.Errorf("wireguard: ERROR: %w", err))
+		log.Fatal(fmt.Errorf("WireGuard: ERROR: %w", err))
 	}
 
 	r, err := wiretunnel.NewResolver(d, localDNS)
 	if err != nil {
-		log.Fatal(fmt.Errorf("resolver: ERROR: %w", err))
+		log.Fatal(fmt.Errorf("Resolver: ERROR: %w", err))
 	}
 
 	var wg sync.WaitGroup

@@ -23,12 +23,12 @@ func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
-			return nil, fmt.Errorf("dial: %w", err)
+			return nil, fmt.Errorf("Dial: %w", err)
 		}
 
 		addrs, err := r.LookupHost(ctx, host)
 		if err != nil {
-			return nil, fmt.Errorf("dial: %w", err)
+			return nil, fmt.Errorf("Dial: %w", err)
 		}
 
 		// dynamically adjust the timeout based on the number of addresses
@@ -47,12 +47,12 @@ func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 				return conn, nil
 			}
 			if err == context.Canceled {
-				return nil, fmt.Errorf("dial: %w", err)
+				return nil, fmt.Errorf("Dial: %w", err)
 			}
 			cancel()
 		}
 
-		return nil, fmt.Errorf("dial: timeout when dialing %s after %.3f seconds", address, time.Since(startTime).Seconds())
+		return nil, fmt.Errorf("Dial: timeout when dialing %s after %.3f seconds", address, time.Since(startTime).Seconds())
 	}
 }
 
@@ -61,11 +61,11 @@ func dialFilter(dial dialFunc) dialFunc {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, _, err := net.SplitHostPort(address)
 		if err != nil {
-			return nil, fmt.Errorf("dial: %w", err)
+			return nil, fmt.Errorf("Dial: %w", err)
 		}
 		ip := net.ParseIP(host)
 		if ip.IsLoopback() || ip.IsUnspecified() {
-			return nil, fmt.Errorf("dial: invalid address %s", address)
+			return nil, fmt.Errorf("Dial: invalid address %s", address)
 		}
 		return dial(ctx, network, address)
 	}

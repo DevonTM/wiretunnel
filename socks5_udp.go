@@ -91,33 +91,33 @@ func exchangeUDP(ue *socks5.UDPExchange, data []byte) error {
 func (s *SOCKS5Server) dialUDP(src, dst string) (net.Conn, error) {
 	laddr, err := net.ResolveUDPAddr("udp", src)
 	if err != nil {
-		return nil, fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("Dial: %w", err)
 	}
 
 	host, port, err := net.SplitHostPort(dst)
 	if err != nil {
-		return nil, fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("Dial: %w", err)
 	}
 
 	addrs, err := s.lookup(host)
 	if err != nil {
-		return nil, fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("Dial: %w", err)
 	}
 
 	host = addrs[rand.IntN(len(addrs))]
 	dst = net.JoinHostPort(host, port)
 	raddr, err := net.ResolveUDPAddr("udp", dst)
 	if err != nil {
-		return nil, fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("Dial: %w", err)
 	}
 
 	if raddr.IP.IsLoopback() || raddr.IP.IsUnspecified() {
-		return nil, fmt.Errorf("dial: invalid address %s", dst)
+		return nil, fmt.Errorf("Dial: invalid address %s", dst)
 	}
 
 	conn, err := s.Dialer.DialUDP(laddr, raddr)
 	if err != nil {
-		return nil, fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("Dial: %w", err)
 	}
 	return conn, nil
 }

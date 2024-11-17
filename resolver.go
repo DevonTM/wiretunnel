@@ -47,7 +47,7 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*resolver, error) {
 	dnsAddrs := d.GetDNS()
 	r.server = net.JoinHostPort(dnsAddrs[0].String(), "53")
 	if len(dnsAddrs) > 1 {
-		log.Print("resolver: WARNING: only the first DNS server is used")
+		log.Print("Resolver: WARNING: only the first DNS server is used")
 	}
 
 	if localDNS {
@@ -70,7 +70,7 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*resolver, error) {
 }
 
 func (r *resolver) testDNSConn() error {
-	log.Print("resolver: testing DNS connection")
+	log.Print("Resolver: Testing DNS connection")
 	conn, err := r.dial(context.Background(), "udp", r.server)
 	if err != nil {
 		return fmt.Errorf("failed to connect to DNS server %s", r.server)
@@ -80,7 +80,7 @@ func (r *resolver) testDNSConn() error {
 }
 
 func (r *resolver) testWGConn(dial dialFunc) error {
-	log.Print("resolver: testing WireGuard connection")
+	log.Print("Resolver: Testing WireGuard connection")
 	var wg sync.WaitGroup
 	wg.Add(2)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
