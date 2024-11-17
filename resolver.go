@@ -70,6 +70,7 @@ func NewResolver(d *wiredialer.WireDialer, localDNS bool) (*resolver, error) {
 }
 
 func (r *resolver) testDNSConn() error {
+	log.Print("resolver: testing DNS connection")
 	conn, err := r.dial(context.Background(), "udp", r.server)
 	if err != nil {
 		return fmt.Errorf("failed to connect to DNS server %s", r.server)
@@ -79,6 +80,7 @@ func (r *resolver) testDNSConn() error {
 }
 
 func (r *resolver) testWGConn(dial dialFunc) error {
+	log.Print("resolver: testing WireGuard connection")
 	var wg sync.WaitGroup
 	wg.Add(2)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
