@@ -4,8 +4,6 @@ github.com/DevonTM/wireguard-go v0.0.0-20240819151436-3cce9150af4b h1:xOAYjNdpn9
 github.com/DevonTM/wireguard-go v0.0.0-20240819151436-3cce9150af4b/go.mod h1:RF/GB1su0s+fGGlrwVBs9PumXZcdmzCxM0m1f+tLJck=
 github.com/google/btree v1.1.3 h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg=
 github.com/google/btree v1.1.3/go.mod h1:qOPhT0dTNdNzV6Z/lhRX0YXUafgPLFUh+gZMl761Gm4=
-github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
-github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/miekg/dns v1.1.51/go.mod h1:2Z9d3CP1LQWihRZUf29mQ19yDThaI4DAYzte2CaQW5c=
 github.com/miekg/dns v1.1.62 h1:cN8OuEF1/x5Rq6Np+h1epln8OiyPWV+lROx9LxcGgIQ=
 github.com/miekg/dns v1.1.62/go.mod h1:mvDlcItzm+br7MToIKqkglaGhlFMHJ9DTNNWONWXbNQ=
@@ -64,5 +62,3 @@ golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 h1:B82qJJgjvYKsXS9jeu
 golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2/go.mod h1:deeaetjYA+DHMHg+sMSMI58GrEteJUUzzw7en6TJQcI=
 gvisor.dev/gvisor v0.0.0-20241115110947-0ffdb7ae1c32 h1:sB85EcHc7b03X3ZwmhLhyF3OeVUukQ2h25PVICJncD0=
 gvisor.dev/gvisor v0.0.0-20241115110947-0ffdb7ae1c32/go.mod h1:5DMfjtclAbTIjbXqO1qCe2K5GKKxWz2JHvCChuTcJEM=
-gvisor.dev/gvisor v0.0.0-20241115232727-336dc8504327 h1:O9/ekaCPg4hsYM6dLzNduacueQk4LN2NZburCffvQzI=
-gvisor.dev/gvisor v0.0.0-20241115232727-336dc8504327/go.mod h1:5DMfjtclAbTIjbXqO1qCe2K5GKKxWz2JHvCChuTcJEM=
