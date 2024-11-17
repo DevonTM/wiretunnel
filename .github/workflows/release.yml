@@ -1,0 +1,60 @@
+name: Build and Release Wiretunnel
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.3'
+
+      - name: Build and Package
+        run: |
+          TAG=${{ github.ref_name }}
+
+          PLATFORMS=(
+            "linux:amd64"
+            "linux:386"
+            "linux:arm64"
+            "windows:amd64"
+            "windows:386"
+            "windows:arm64"
+          )
+
+          export CGO_ENABLED=0
+
+          mkdir -p dist
+
+          for PLATFORM in "${PLATFORMS[@]}"; do
+            OS=${PLATFORM%:*}
+            ARCH=${PLATFORM#*:}
+
+            DIR_NAME="wiretunnel-${TAG}-${OS}-${ARCH}"
+            OUTPUT="dist/$DIR_NAME"
+
+            mkdir -p "$OUTPUT"
+
+            env GOOS=$OS GOARCH=$ARCH go build -v -trimpath -ldflags "-s -w" -o $OUTPUT/ ./cmd/wiretunnel
+
+            cp LICENSE "$OUTPUT/"
+
+            (cd dist && zip -r "${DIR_NAME}.zip" "$DIR_NAME")
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
