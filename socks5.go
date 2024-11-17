@@ -75,7 +75,7 @@ func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
 					}
 					err = s.tcpHandle(c, r)
 					if err != nil {
-						log.Printf("SOCKS5 proxy server: TCP: %s: error: %v", c.RemoteAddr(), err)
+						log.Printf("SOCKS5 proxy server: TCP: %s: ERROR: %v", c.RemoteAddr(), err)
 					}
 				}(c)
 			}
@@ -114,7 +114,7 @@ func (s *SOCKS5Server) listenAndServe(ss *socks5.Server) error {
 					}
 					err = s.udpHandle(ss, addr, d)
 					if err != nil {
-						log.Printf("SOCKS5 proxy server: UDP: %s: error: %v", addr, err)
+						log.Printf("SOCKS5 proxy server: UDP: %s: ERROR: %v", addr, err)
 					}
 				}(addr, b[:n])
 			}

@@ -30,17 +30,17 @@ func main() {
 
 	err := configParse()
 	if err != nil {
-		log.Fatal(fmt.Errorf("config: error: %w", err))
+		log.Fatal(fmt.Errorf("config: ERROR: %w", err))
 	}
 
 	d, err := wiretunnel.NewDialer(wgConfigPath)
 	if err != nil {
-		log.Fatal(fmt.Errorf("wireguard: error: %w", err))
+		log.Fatal(fmt.Errorf("wireguard: ERROR: %w", err))
 	}
 
 	r, err := wiretunnel.NewResolver(d, localDNS)
 	if err != nil {
-		log.Fatal(fmt.Errorf("resolver: error: %w", err))
+		log.Fatal(fmt.Errorf("resolver: ERROR: %w", err))
 	}
 
 	var wg sync.WaitGroup
@@ -58,7 +58,7 @@ func main() {
 			log.Println("HTTP proxy server: listening on", httpAddr)
 			err := httpServer.ListenAndServe()
 			if err != nil {
-				log.Printf("HTTP proxy server: error: %v", err)
+				log.Printf("HTTP proxy server: ERROR: %v", err)
 			}
 			wg.Done()
 		}()
@@ -77,7 +77,7 @@ func main() {
 			log.Println("SOCKS5 proxy server: listening on", socks5Addr)
 			err := socks5Server.ListenAndServe()
 			if err != nil {
-				log.Printf("SOCKS5 proxy server: error: %v", err)
+				log.Printf("SOCKS5 proxy server: ERROR: %v", err)
 			}
 			wg.Done()
 		}()
