@@ -59,7 +59,7 @@ func main() {
 				BypassList: b,
 				Resolver:   r,
 			}
-			log.Println("HTTP proxy server: listening on", httpAddr)
+			log.Println("HTTP proxy server: INFO: listening on", httpAddr)
 			err := httpServer.ListenAndServe()
 			if err != nil {
 				log.Printf("HTTP proxy server: ERROR: %v", err)
@@ -79,7 +79,7 @@ func main() {
 				BypassList: b,
 				Resolver:   r,
 			}
-			log.Println("SOCKS5 proxy server: listening on", socks5Addr)
+			log.Println("SOCKS5 proxy server: INFO: listening on", socks5Addr)
 			err := socks5Server.ListenAndServe()
 			if err != nil {
 				log.Printf("SOCKS5 proxy server: ERROR: %v", err)
