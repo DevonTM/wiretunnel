@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/botanica-consulting/wiredialer"
@@ -39,20 +40,25 @@ func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 			timeout = min
 		}
 
+		var errorMessages []string
+
 		for _, addr := range addrs {
 			ctx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
-			conn, err := dial(ctx, network, net.JoinHostPort(addr, port))
+			target := net.JoinHostPort(addr, port)
+			conn, err := dial(ctx, network, target)
 			if err == nil {
 				return conn, nil
+			} else if err == context.Canceled {
+				return nil, fmt.Errorf("Dial: canceled when dialing %s after %.3f seconds", address, time.Since(startTime).Seconds())
+			} else if err == context.DeadlineExceeded {
+				err = fmt.Errorf("Dial: timed out when dialing %s", target)
 			}
-			if err == context.Canceled {
-				return nil, fmt.Errorf("Dial: %w", err)
-			}
+			errorMessages = append(errorMessages, err.Error())
 			cancel()
 		}
 
-		return nil, fmt.Errorf("Dial: timeout when dialing %s after %.3f seconds", address, time.Since(startTime).Seconds())
+		return nil, fmt.Errorf("Dial: failed when dialing %s after %.3f seconds. Reasons: %s", address, time.Since(startTime).Seconds(), strings.Join(errorMessages, "; "))
 	}
 }
 
