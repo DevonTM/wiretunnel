@@ -17,6 +17,7 @@ func init() {
 	flag.StringVar(&socks5Addr, "saddr", "", "SOCKS5 server `address`, set '0' to disable, default ':1080'\n$SOCKS5_ADDR")
 	flag.StringVar(&socks5User, "suser", "", "SOCKS5 proxy `username`\n$SOCKS5_USER")
 	flag.StringVar(&socks5Pass, "spass", "", "SOCKS5 proxy `password`\n$SOCKS5_PASS")
+	flag.StringVar(&bypassList, "bl", "", "Bypass list of `IPs` separated by commas\n$BYPASS_LIST")
 	flag.BoolVar(&localDNS, "ldns", false, "Resolve address locally\n$LOCAL_DNS")
 	flag.BoolVar(&showVersion, "v", false, "Print version and exit")
 	flag.Parse()
@@ -43,17 +44,20 @@ func main() {
 		log.Fatal(fmt.Errorf("Resolver: ERROR: %w", err))
 	}
 
+	b := parseBypassList(bypassList)
+
 	var wg sync.WaitGroup
 
 	if httpAddr != "0" {
 		wg.Add(1)
 		go func() {
 			httpServer := &wiretunnel.HTTPServer{
-				Address:  httpAddr,
-				Username: httpUser,
-				Password: httpPass,
-				Dialer:   d,
-				Resolver: r,
+				Address:    httpAddr,
+				Username:   httpUser,
+				Password:   httpPass,
+				Dialer:     d,
+				BypassList: b,
+				Resolver:   r,
 			}
 			log.Println("HTTP proxy server: listening on", httpAddr)
 			err := httpServer.ListenAndServe()
@@ -68,11 +72,12 @@ func main() {
 		wg.Add(1)
 		go func() {
 			socks5Server := &wiretunnel.SOCKS5Server{
-				Address:  socks5Addr,
-				Username: socks5User,
-				Password: socks5Pass,
-				Dialer:   d,
-				Resolver: r,
+				Address:    socks5Addr,
+				Username:   socks5User,
+				Password:   socks5Pass,
+				Dialer:     d,
+				BypassList: b,
+				Resolver:   r,
 			}
 			log.Println("SOCKS5 proxy server: listening on", socks5Addr)
 			err := socks5Server.ListenAndServe()

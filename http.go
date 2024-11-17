@@ -16,8 +16,9 @@ type HTTPServer struct {
 	Username string
 	Password string
 
-	Dialer   *wiredialer.WireDialer
-	Resolver Resolver
+	Dialer     *wiredialer.WireDialer
+	BypassList []*net.IPNet
+	Resolver   Resolver
 
 	dial      dialFunc
 	transport *http.Transport
@@ -25,7 +26,7 @@ type HTTPServer struct {
 
 // ListenAndServe listens on the s.Address and serves HTTP requests.
 func (s *HTTPServer) ListenAndServe() error {
-	s.dial = dialFilter(s.Dialer.DialContext)
+	s.dial = dialFilter(s.Dialer.DialContext, s.BypassList)
 	if s.Resolver != nil {
 		s.dial = dialWithResolver(s.dial, s.Resolver)
 	}

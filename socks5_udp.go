@@ -115,9 +115,11 @@ func (s *SOCKS5Server) dialUDP(src, dst string) (net.Conn, error) {
 		return nil, fmt.Errorf("Dial: invalid address %s", dst)
 	}
 
-	conn, err := s.Dialer.DialUDP(laddr, raddr)
-	if err != nil {
-		return nil, fmt.Errorf("Dial: %w", err)
+	for _, bypass := range s.BypassList {
+		if bypass.Contains(raddr.IP) {
+			return net.DialUDP("udp", laddr, raddr)
+		}
 	}
-	return conn, nil
+
+	return s.Dialer.DialUDP(laddr, raddr)
 }

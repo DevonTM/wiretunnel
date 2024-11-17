@@ -63,16 +63,25 @@ func dialWithResolver(dial dialFunc, r Resolver) dialFunc {
 }
 
 // dialFilter returns a dial function that filters out loopback and unspecified addresses.
-func dialFilter(dial dialFunc) dialFunc {
+func dialFilter(dial dialFunc, bypassList []*net.IPNet) dialFunc {
+	netDialer := new(net.Dialer)
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, _, err := net.SplitHostPort(address)
 		if err != nil {
 			return nil, fmt.Errorf("Dial: %w", err)
 		}
+
 		ip := net.ParseIP(host)
 		if ip.IsLoopback() || ip.IsUnspecified() {
 			return nil, fmt.Errorf("Dial: invalid address %s", address)
 		}
+
+		for _, bypass := range bypassList {
+			if bypass.Contains(ip) {
+				return netDialer.DialContext(ctx, network, address)
+			}
+		}
+
 		return dial(ctx, network, address)
 	}
 }

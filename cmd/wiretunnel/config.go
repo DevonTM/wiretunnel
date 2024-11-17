@@ -19,7 +19,8 @@ var (
 	socks5User string
 	socks5Pass string
 
-	localDNS bool
+	bypassList string
+	localDNS   bool
 
 	showVersion bool
 )
@@ -51,6 +52,10 @@ func configParse() error {
 
 	if socks5Pass == "" {
 		socks5Pass = os.Getenv("SOCKS5_PASS")
+	}
+
+	if bypassList == "" {
+		bypassList = os.Getenv("BYPASS_LIST")
 	}
 
 	if !localDNS {

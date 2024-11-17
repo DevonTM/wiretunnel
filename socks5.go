@@ -16,8 +16,9 @@ type SOCKS5Server struct {
 	Username string
 	Password string
 
-	Dialer   *wiredialer.WireDialer
-	Resolver Resolver
+	Dialer     *wiredialer.WireDialer
+	BypassList []*net.IPNet
+	Resolver   Resolver
 
 	dial   dialFunc
 	lookup func(host string) ([]string, error)
@@ -25,7 +26,7 @@ type SOCKS5Server struct {
 
 // ListenAndServe listens on the s.Address and serves SOCKS5 requests.
 func (s *SOCKS5Server) ListenAndServe() error {
-	s.dial = dialFilter(s.Dialer.DialContext)
+	s.dial = dialFilter(s.Dialer.DialContext, s.BypassList)
 	s.lookup = s.Dialer.LookupHost
 	if s.Resolver != nil {
 		s.dial = dialWithResolver(s.dial, s.Resolver)
