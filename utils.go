@@ -1,11 +1,11 @@
-package main
+package wiretunnel
 
 import (
 	"net"
 	"strings"
 )
 
-func parseBypassList(list string) []*net.IPNet {
+func ParseBypassList(list string) []*net.IPNet {
 	var netIPs []*net.IPNet
 
 	for _, s := range strings.Split(list, ",") {

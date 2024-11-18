@@ -45,7 +45,7 @@ func main() {
 		log.Fatal(fmt.Errorf("Resolver: ERROR: %w", err))
 	}
 
-	b := parseBypassList(bypassList)
+	b := wiretunnel.ParseBypassList(bypassList)
 
 	var wg sync.WaitGroup
 
