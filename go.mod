@@ -1,6 +1,6 @@
 module github.com/DevonTM/wiretunnel
 
-go 1.23.3
+go 1.24.3
 
 require (
 	github.com/botanica-consulting/wiredialer v0.0.0-20230710124424-ca42731e9a5c
