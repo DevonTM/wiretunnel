@@ -24,8 +24,4 @@ require (
 	gvisor.dev/gvisor v0.0.0-20250508034517-50d10f2e1265 // indirect
 )
 
-replace (
-	github.com/botanica-consulting/wiredialer => github.com/DevonTM/wiredialer v0.0.0-20240417131724-b23e84cbc1fe
-	// use forked wireguard-go to fix removed isNil() in newer gvisor version
-	golang.zx2c4.com/wireguard => github.com/DevonTM/wireguard-go v0.0.0-20240819151436-3cce9150af4b
-)
+replace github.com/botanica-consulting/wiredialer => github.com/DevonTM/wiredialer v0.0.0-20240417131724-b23e84cbc1fe
